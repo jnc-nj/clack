@@ -18,6 +18,7 @@
 
 (defun run (app server &rest args &key use-thread &allow-other-keys)
   (let ((handler-package (find-handler server))
+	(acceptor-name (format nil "clack-handler-~(~A~)-~A" server (gensym)))
         (bt:*default-special-bindings* `((*standard-output* . ,*standard-output*)
                                          (*error-output* . ,*error-output*)
                                          ,@bt:*default-special-bindings*)))
@@ -26,15 +27,17 @@
                     app
                     :allow-other-keys t
                     args)))
-      (make-handler
-       :server server
-       :acceptor (if use-thread
-                     (bt:make-thread #'run-server
-                                     :name (format nil "clack-handler-~(~A~)" server)
-                                     :initial-bindings
-                                     `((bt:*default-special-bindings* . ',bt:*default-special-bindings*)
-                                       ,@bt:*default-special-bindings*))
-                     (run-server))))))
+      (values
+       (make-handler
+	:server server
+	:acceptor (if use-thread
+		      (bt:make-thread #'run-server
+				      :name acceptor-name
+				      :initial-bindings
+				      `((bt:*default-special-bindings* . ',bt:*default-special-bindings*)
+					,@bt:*default-special-bindings*))
+		      (run-server)))
+       acceptor-name))))
 
 (defun stop (handler)
   (let ((acceptor (handler-acceptor handler)))

@@ -76,7 +76,7 @@
                   silent
                   (use-thread #+thread-support t #-thread-support nil)
                   (use-default-middlewares t)
-                &allow-other-keys)
+		  &allow-other-keys)
   #-thread-support
   (when use-thread
     (error ":use-thread is T though there's no thread support."))
@@ -96,14 +96,13 @@
       (when (and (not use-thread)
                  (not silent))
         (format t "~&~:(~A~) server is going to start.~%Listening on ~A:~A.~%" server address port))
-      (with-handle-interrupt (lambda ()
-                               (format *error-output* "Interrupted"))
-        (prog1
-            (apply #'clack.handler:run app server
-                   :port port
-                   :debug debug
-                   :use-thread use-thread
-                   (delete-from-plist args :server :port :debug :silent :use-thread))
-          (when (and use-thread
-                     (not silent))
-            (format t "~&~:(~A~) server is started.~%Listening on ~A:~A.~%" server address port)))))))
+      (with-handle-interrupt (lambda () (format *error-output* "Interrupted"))
+        (multiple-value-bind (handler acceptor-name)
+	    (apply #'clack.handler:run app server
+		   :port port
+		   :debug debug
+		   :use-thread use-thread
+		   (delete-from-plist args :server :port :debug :silent :use-thread))
+	  (when (and use-thread (not silent))
+	    (format t "~&~:(~A~) server is started.~%Listening on ~A:~A.~%" server address port)) 
+	  (values handler acceptor-name))))))
