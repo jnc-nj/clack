@@ -18,7 +18,10 @@
 
 (defun run (app server &rest args &key use-thread &allow-other-keys)
   (let ((handler-package (find-handler server))
-	(acceptor-name (format nil "clack-handler-~(~A~)-~A" server (gensym)))
+	(acceptor-name (format nil "clack-handler-~(~A~)-~A-~A:~A"
+			       server (gensym)
+			       (getf args :address)
+			       (getf args :port)))
         (bt:*default-special-bindings* `((*standard-output* . ,*standard-output*)
                                          (*error-output* . ,*error-output*)
                                          ,@bt:*default-special-bindings*)))
